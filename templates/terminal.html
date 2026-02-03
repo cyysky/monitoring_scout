@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Terminal - {{ host.name }} - Monitoring Scout{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
+<style>
+    body {
+        margin: 0;
+        overflow: hidden;
+    }
+    .terminal-container {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+    .terminal-header {
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border-color);
+        padding: 10px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .terminal-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .terminal-title i {
+        color: var(--success-color);
+    }
+    .terminal-title h3 {
+        margin: 0;
+        font-size: 16px;
+    }
+    .terminal-info {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        color: var(--text-muted);
+        font-size: 13px;
+    }
+    .terminal-status {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .terminal-status .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--success-color);
+        animation: pulse 2s infinite;
+    }
+    .terminal-actions {
+        display: flex;
+        gap: 10px;
+    }
+    .terminal-actions .btn {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+    #terminal {
+        flex: 1;
+        background: #0d1117;
+        padding: 10px;
+    }
+    .xterm {
+        padding: 10px;
+    }
+    .connection-status {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        display: none;
+    }
+    .connection-status.show {
+        display: block;
+    }
+    .connection-status i {
+        font-size: 48px;
+        color: var(--primary-color);
+        margin-bottom: 15px;
+    }
+    .connection-status p {
+        color: var(--text-muted);
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="terminal-container">
+    <div class="terminal-header">
+        <div class="terminal-title">
+            <i class="fas fa-server"></i>
+            <h3>{{ host.name }}</h3>
+            <span class="text-muted">|</span>
+            <span class="text-muted">{{ host.ip }}:{{ host.port }}</span>
+        </div>
+        <div class="terminal-info">
+            <div class="terminal-status">
+                <span class="status-dot" id="status-dot"></span>
+                <span id="connection-status">Connecting...</span>
+            </div>
+            <span>User: {{ host.username }}</span>
+        </div>
+        <div class="terminal-actions">
+            <button class="btn btn-sm" onclick="reconnect()">
+                <i class="fas fa-sync-alt"></i> Reconnect
+            </button>
+            <button class="btn btn-sm btn-primary" onclick="window.close()">
+                <i class="fas fa-times"></i> Close
+            </button>
+        </div>
+    </div>
+    <div id="terminal"></div>
+    <div class="connection-status" id="connection-message">
+        <i class="fas fa-circle-notch fa-spin"></i>
+        <p>Connecting to {{ host.ip }}...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+<script>
+    const hostId = '{{ host.id }}';
+    const hostName = '{{ host.name }}';
+    const hostIp = '{{ host.ip }}';
+</script>
+<script src="{{ url_for('static', filename='js/terminal.js') }}"></script>
+{% endblock %}

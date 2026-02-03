@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Monitoring Scout{% endblock %}
+
+{% block content %}
+<!-- Sidebar -->
+<nav class="sidebar">
+    <div class="sidebar-header">
+        <div class="logo">
+            <i class="fas fa-satellite-dish"></i>
+        </div>
+        <span class="brand">Monitoring Scout</span>
+    </div>
+    
+    <ul class="sidebar-menu">
+        <li class="active">
+            <a href="{{ url_for('dashboard') }}">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </a>
+        </li>
+        <li>
+            <a href="#" onclick="showAddHostModal(); return false;">
+                <i class="fas fa-plus-circle"></i>
+                <span>Add Host</span>
+            </a>
+        </li>
+        <li>
+            <a href="#" onclick="refreshAllHosts(); return false;">
+                <i class="fas fa-sync-alt"></i>
+                <span>Refresh All</span>
+            </a>
+        </li>
+    </ul>
+    
+    <div class="sidebar-footer">
+        <a href="{{ url_for('logout') }}" class="logout-btn">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+        </a>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<main class="main-content">
+    <!-- Top Header -->
+    <header class="top-header">
+        <h2><i class="fas fa-server"></i> Server Dashboard</h2>
+        <div class="header-actions">
+            <div class="status-summary">
+                <span class="badge badge-online">
+                    <i class="fas fa-circle"></i>
+                    <span id="online-count">0</span> Online
+                </span>
+                <span class="badge badge-offline">
+                    <i class="fas fa-circle"></i>
+                    <span id="offline-count">0</span> Offline
+                </span>
+            </div>
+            <span class="current-time" id="current-time"></span>
+        </div>
+    </header>
+    
+    <!-- Dashboard Content -->
+    <div class="dashboard-container">
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <i class="fas fa-server"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="total-hosts">0</h3>
+                    <p>Total Hosts</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="online-hosts">0</h3>
+                    <p>Online</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%);">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="alert-hosts">0</h3>
+                    <p>Alerts</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <i class="fas fa-network-wired"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="avg-cpu">0%</h3>
+                    <p>Avg CPU</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Hosts Grid -->
+        <div class="section-header">
+            <h3><i class="fas fa-th-large"></i> Hosts</h3>
+            <div class="filter-actions">
+                <button class="btn btn-sm" onclick="filterHosts('all')">All</button>
+                <button class="btn btn-sm btn-online" onclick="filterHosts('online')">Online</button>
+                <button class="btn btn-sm btn-offline" onclick="filterHosts('offline')">Offline</button>
+            </div>
+        </div>
+        
+        <div class="hosts-grid" id="hosts-grid">
+            <!-- Hosts will be loaded here dynamically -->
+        </div>
+    </div>
+</main>
+
+<!-- Add Host Modal -->
+<div class="modal" id="addHostModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-plus-circle"></i> Add New Host</h3>
+            <button class="close-btn" onclick="closeModal('addHostModal')">&times;</button>
+        </div>
+        <form id="addHostForm">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Host Name *</label>
+                    <input type="text" name="name" required placeholder="e.g., Web Server 01">
+                </div>
+                <div class="form-group">
+                    <label>Group</label>
+                    <input type="text" name="group" placeholder="e.g., Production">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>IP Address *</label>
+                    <input type="text" name="ip" required placeholder="e.g., 192.168.1.10">
+                </div>
+                <div class="form-group">
+                    <label>Port</label>
+                    <input type="number" name="port" value="22" min="1" max="65535">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Username *</label>
+                    <input type="text" name="username" required placeholder="e.g., root">
+                </div>
+                <div class="form-group">
+                    <label>Password *</label>
+                    <input type="password" name="password" required placeholder="SSH password">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea name="description" rows="2" placeholder="Optional description"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('addHostModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Add Host
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Host Modal -->
+<div class="modal" id="editHostModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-edit"></i> Edit Host</h3>
+            <button class="close-btn" onclick="closeModal('editHostModal')">&times;</button>
+        </div>
+        <form id="editHostForm">
+            <input type="hidden" name="host_id">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Host Name *</label>
+                    <input type="text" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label>Group</label>
+                    <input type="text" name="group">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>IP Address *</label>
+                    <input type="text" name="ip" required>
+                </div>
+                <div class="form-group">
+                    <label>Port</label>
+                    <input type="number" name="port" min="1" max="65535">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Username *</label>
+                    <input type="text" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label>Password <small>(leave blank to keep unchanged)</small></label>
+                    <input type="password" name="password" placeholder="••••••••">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea name="description" rows="2"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('editHostModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Host Details Modal -->
+<div class="modal" id="hostDetailsModal">
+    <div class="modal-content modal-lg">
+        <div class="modal-header">
+            <h3><i class="fas fa-info-circle"></i> Host Details</h3>
+            <button class="close-btn" onclick="closeModal('hostDetailsModal')">&times;</button>
+        </div>
+        <div class="host-details-content" id="hostDetailsContent">
+            <!-- Dynamic content -->
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('hostDetailsModal')">Close</button>
+            <a href="#" id="terminalBtn" class="btn btn-primary">
+                <i class="fas fa-terminal"></i> Open Terminal
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}
